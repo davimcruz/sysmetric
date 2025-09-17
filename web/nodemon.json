@@ -1,0 +1,8 @@
+{
+  "watch": ["api/**/*", "*.ts"],
+  "ext": "ts,json",
+  "exec": "ts-node --esm api/index.ts",
+  "env": {
+    "NODE_ENV": "development"
+  }
+}
