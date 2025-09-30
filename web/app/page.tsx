@@ -10,8 +10,9 @@ import { StatusIndicator } from "@/components/status-indicator";
 import { MachineInfo } from "@/components/machine-info";
 import { Section } from "@/components/section";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Server, Activity, Network, Settings } from "lucide-react";
+import { Server, Activity, Network, Settings, TrendingUp } from "lucide-react";
 import { MonitorData } from "@/components/metrics-cards/types";
+import { TrendsChart } from "@/components/trends-chart";
 
 export default function Page() {
   const [monitors, setMonitors] = useState<MonitorData[]>([]);
@@ -19,6 +20,7 @@ export default function Page() {
   const [selectedMachine, setSelectedMachine] = useState<string>("");
   const [isLoading, setIsLoading] = useState(true);
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
+  const [trendsData, setTrendsData] = useState<any[]>([]);
   const monitorsRef = useRef<MonitorData[]>([]);
 
   const selectedData = useMemo(
@@ -82,11 +84,28 @@ export default function Page() {
     }
   }, [selectedMachine]);
 
+  const fetchTrendsData = useCallback(async () => {
+    try {
+      const response = await fetch("/api/trends");
+      if (response.ok) {
+        const data = await response.json();
+        setTrendsData(data.trends || []);
+      }
+    } catch (error) {
+      console.error("Erro ao buscar dados de tendências:", error);
+    }
+  }, []);
+
   useEffect(() => {
     fetchData();
+    fetchTrendsData();
     const interval = setInterval(fetchData, 5000);
-    return () => clearInterval(interval);
-  }, [fetchData]);
+    const trendsInterval = setInterval(fetchTrendsData, 2000);
+    return () => {
+      clearInterval(interval);
+      clearInterval(trendsInterval);
+    };
+  }, [fetchData, fetchTrendsData]);
 
 
   return (
@@ -124,7 +143,7 @@ export default function Page() {
               <MachineInfo data={selectedData} />
 
               <Tabs defaultValue="overview" className="space-y-6">
-                <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 bg-white border border-gray-200 p-1 h-12">
+                <TabsList className="grid w-full grid-cols-2 md:grid-cols-5 bg-white border border-gray-200 p-1 h-12">
                   <TabsTrigger 
                     value="overview" 
                     className="flex items-center gap-2 cursor-pointer !text-gray-600 hover:!text-gray-900 data-[state=active]:!bg-green-50 data-[state=active]:!text-green-700 data-[state=active]:!border-green-200 data-[state=active]:!shadow-sm"
@@ -156,6 +175,14 @@ export default function Page() {
                     <Server className="h-4 w-4" />
                     <span className="hidden sm:inline">Processos</span>
                     <span className="sm:hidden">Proc</span>
+                  </TabsTrigger>
+                  <TabsTrigger 
+                    value="trends" 
+                    className="flex items-center gap-2 cursor-pointer !text-gray-600 hover:!text-gray-900 data-[state=active]:!bg-green-50 data-[state=active]:!text-green-700 data-[state=active]:!border-green-200 data-[state=active]:!shadow-sm"
+                  >
+                    <TrendingUp className="h-4 w-4" />
+                    <span className="hidden sm:inline">Tendências</span>
+                    <span className="sm:hidden">Trend</span>
                   </TabsTrigger>
                 </TabsList>
 
@@ -194,6 +221,12 @@ export default function Page() {
                     <div className="bg-white border border-gray-200 rounded-lg p-6">
                       <ProcessesTable processes={selectedData.processes} />
                     </div>
+                  </Section>
+                </TabsContent>
+
+                <TabsContent value="trends" className="space-y-6">
+                  <Section title="Análise de Tendências" description="Histórico e padrões de uso dos recursos do sistema">
+                    <TrendsChart data={trendsData} />
                   </Section>
                 </TabsContent>
               </Tabs>
