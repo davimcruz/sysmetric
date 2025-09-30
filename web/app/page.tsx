@@ -1,27 +1,53 @@
 "use client";
 
-import { useState, useEffect, useMemo, useCallback } from "react";
-import { AppSidebar } from "@/components/app-sidebar";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { SiteHeader } from "@/components/site-header";
 import { MetricsCards } from "@/components/metrics-cards";
 import { ProcessesTable } from "@/components/processes-table";
 import { SystemInfo } from "@/components/system-info";
 import { NetworkInterfaces } from "@/components/network-interfaces";
-import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Clock, Server } from "lucide-react";
+import { StatusIndicator } from "@/components/status-indicator";
+import { MachineInfo } from "@/components/machine-info";
+import { Section } from "@/components/section";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Server, Activity, Network, Settings } from "lucide-react";
 import { MonitorData } from "@/components/metrics-cards/types";
 
 export default function Page() {
   const [monitors, setMonitors] = useState<MonitorData[]>([]);
+  const [previousMonitors, setPreviousMonitors] = useState<MonitorData[]>([]);
   const [selectedMachine, setSelectedMachine] = useState<string>("");
   const [isLoading, setIsLoading] = useState(true);
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
+  const monitorsRef = useRef<MonitorData[]>([]);
 
   const selectedData = useMemo(
     () => monitors.find((m) => m.id === selectedMachine) || null,
     [monitors, selectedMachine]
   );
+
+  const previousSelectedData = useMemo(
+    () => previousMonitors.find((m) => m.id === selectedMachine) || null,
+    [previousMonitors, selectedMachine]
+  );
+
+  const systemData = useMemo(() => {
+    if (!selectedData) return undefined;
+    return {
+      cpu_percent: selectedData.cpu.percent,
+      memory_percent: selectedData.memory.percent,
+      disk_percent: selectedData.disk.percent
+    };
+  }, [selectedData]);
+
+  const previousSystemData = useMemo(() => {
+    if (!previousSelectedData) return undefined;
+    return {
+      cpu_percent: previousSelectedData.cpu.percent,
+      memory_percent: previousSelectedData.memory.percent,
+      disk_percent: previousSelectedData.disk.percent
+    };
+  }, [previousSelectedData]);
 
   const machines = useMemo(
     () =>
@@ -38,11 +64,15 @@ export default function Page() {
       const response = await fetch("/api/monitors");
       if (response.ok) {
         const data = await response.json();
-        setMonitors(data);
+        setPreviousMonitors(monitorsRef.current);
+        
+        const monitorsData = data.monitors || data;
+        setMonitors(monitorsData);
+        monitorsRef.current = monitorsData;
         setLastUpdate(new Date());
 
-        if (data.length > 0 && !selectedMachine) {
-          setSelectedMachine(data[0].id);
+        if (monitorsData.length > 0 && !selectedMachine) {
+          setSelectedMachine(monitorsData[0].id);
         }
       }
       setIsLoading(false);
@@ -58,130 +88,129 @@ export default function Page() {
     return () => clearInterval(interval);
   }, [fetchData]);
 
-  const statusText = useMemo(
-    () =>
-      `${monitors.length} máquina${monitors.length !== 1 ? "s" : ""} conectada${
-        monitors.length !== 1 ? "s" : ""
-      }`,
-    [monitors.length]
-  );
-
-  const lastUpdateTime = useMemo(
-    () => lastUpdate.toLocaleTimeString("pt-BR"),
-    [lastUpdate]
-  );
 
   return (
-    <SidebarProvider
-      style={
-        {
-          "--sidebar-width": "calc(var(--spacing) * 72)",
-          "--header-height": "calc(var(--spacing) * 12)",
-        } as React.CSSProperties
-      }
-    >
-      <AppSidebar variant="inset" />
-      <SidebarInset>
-        <SiteHeader
-          selectedMachine={selectedMachine}
-          onMachineChange={setSelectedMachine}
-          machines={machines}
-        />
-        <div className="flex flex-1 flex-col">
-          <div className="@container/main flex flex-1 flex-col gap-2">
-            <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
-              <div className="px-4 lg:px-6">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-4">
-                    <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                      <span className="text-sm text-muted-foreground">
-                        {statusText}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <Clock className="h-4 w-4" />
-                      <span>Última atualização: {lastUpdateTime}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
+    <div className="min-h-screen bg-gray-50">
+      <SiteHeader
+        selectedMachine={selectedMachine}
+        onMachineChange={setSelectedMachine}
+        machines={machines}
+        monitorsCount={monitors.length}
+        previousMonitorsCount={previousMonitors.length}
+        systemData={systemData}
+        previousSystemData={previousSystemData}
+      />
+      
+      <main className="p-6">
+        <div className="max-w-7xl mx-auto space-y-6">
+          <StatusIndicator 
+            monitorsCount={monitors.length}
+            lastUpdate={lastUpdate}
+            isOnline={monitors.length > 0}
+          />
 
-              <div className="px-4 lg:px-6">
-                <MetricsCards data={selectedData} />
-              </div>
-
-              {selectedData && (
-                <div className="px-4 lg:px-6">
-                  <Card>
-                    <CardHeader>
-                      <div className="flex items-center gap-2">
-                        <Server className="h-5 w-5 text-muted-foreground" />
-                        <CardTitle className="text-lg">
-                          {selectedData.machine_name || selectedData.hostname}
-                        </CardTitle>
-                      </div>
-                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                        <span>Sistema: {selectedData.system}</span>
-                        <span>ID: {selectedData.id.slice(0, 8)}...</span>
-                        <span>
-                          Atualizado:{" "}
-                          {new Date(selectedData.timestamp).toLocaleString(
-                            "pt-BR"
-                          )}
-                        </span>
-                      </div>
-                    </CardHeader>
-                  </Card>
-                </div>
-              )}
-
-              {selectedData && (
-                <div className="px-4 lg:px-6">
-                  <SystemInfo data={selectedData} />
-                </div>
-              )}
-
-              {selectedData?.network?.interfaces && (
-                <div className="px-4 lg:px-6">
-                  <NetworkInterfaces
-                    interfaces={selectedData.network.interfaces}
-                  />
-                </div>
-              )}
-
-              {selectedData && (
-                <div className="px-4 lg:px-6">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Processos Ativos</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <ProcessesTable processes={selectedData.processes} />
-                    </CardContent>
-                  </Card>
-                </div>
-              )}
-
-              {!isLoading && monitors.length === 0 && (
-                <div className="px-4 lg:px-6">
-                  <Card>
-                    <CardContent className="flex flex-col items-center justify-center py-12">
-                      <Server className="h-12 w-12 text-muted-foreground mb-4" />
-                      <h3 className="text-lg font-semibold mb-2">
-                        Nenhuma máquina conectada
-                      </h3>
-                      <p className="text-muted-foreground text-center">
-                        Aguardando dados de monitoramento...
-                      </p>
-                    </CardContent>
-                  </Card>
-                </div>
-              )}
+          {!isLoading && monitors.length === 0 ? (
+            <div className="bg-white border border-gray-200 rounded-lg p-12 text-center">
+              <Server className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                Nenhuma máquina conectada
+              </h3>
+              <p className="text-gray-500 max-w-md mx-auto">
+                Aguardando dados de monitoramento. Certifique-se de que o agente de monitoramento está rodando.
+              </p>
             </div>
-          </div>
+          ) : selectedData ? (
+            <div className="space-y-6">
+              <MachineInfo data={selectedData} />
+
+              <Tabs defaultValue="overview" className="space-y-6">
+                <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 bg-white border border-gray-200 p-1 h-12">
+                  <TabsTrigger 
+                    value="overview" 
+                    className="flex items-center gap-2 cursor-pointer !text-gray-600 hover:!text-gray-900 data-[state=active]:!bg-green-50 data-[state=active]:!text-green-700 data-[state=active]:!border-green-200 data-[state=active]:!shadow-sm"
+                  >
+                    <Activity className="h-4 w-4" />
+                    <span className="hidden sm:inline">Visão Geral</span>
+                    <span className="sm:hidden">Geral</span>
+                  </TabsTrigger>
+                  <TabsTrigger 
+                    value="system" 
+                    className="flex items-center gap-2 cursor-pointer !text-gray-600 hover:!text-gray-900 data-[state=active]:!bg-green-50 data-[state=active]:!text-green-700 data-[state=active]:!border-green-200 data-[state=active]:!shadow-sm"
+                  >
+                    <Settings className="h-4 w-4" />
+                    <span className="hidden sm:inline">Sistema</span>
+                    <span className="sm:hidden">Sys</span>
+                  </TabsTrigger>
+                  <TabsTrigger 
+                    value="network" 
+                    className="flex items-center gap-2 cursor-pointer !text-gray-600 hover:!text-gray-900 data-[state=active]:!bg-green-50 data-[state=active]:!text-green-700 data-[state=active]:!border-green-200 data-[state=active]:!shadow-sm"
+                  >
+                    <Network className="h-4 w-4" />
+                    <span className="hidden sm:inline">Rede</span>
+                    <span className="sm:hidden">Net</span>
+                  </TabsTrigger>
+                  <TabsTrigger 
+                    value="processes" 
+                    className="flex items-center gap-2 cursor-pointer !text-gray-600 hover:!text-gray-900 data-[state=active]:!bg-green-50 data-[state=active]:!text-green-700 data-[state=active]:!border-green-200 data-[state=active]:!shadow-sm"
+                  >
+                    <Server className="h-4 w-4" />
+                    <span className="hidden sm:inline">Processos</span>
+                    <span className="sm:hidden">Proc</span>
+                  </TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="overview" className="space-y-6">
+                  <Section title="Métricas Principais" description="Monitoramento em tempo real dos recursos do sistema">
+                    <MetricsCards data={selectedData} />
+                  </Section>
+                </TabsContent>
+
+                <TabsContent value="system" className="space-y-6">
+                  <Section title="Informações do Sistema" description="Detalhes sobre hardware e configurações">
+                    <SystemInfo data={selectedData} />
+                  </Section>
+                </TabsContent>
+
+                <TabsContent value="network" className="space-y-6">
+                  {selectedData?.network?.interfaces ? (
+                    <Section title="Interfaces de Rede" description="Configurações e status das interfaces de rede">
+                      <NetworkInterfaces interfaces={selectedData.network.interfaces} />
+                    </Section>
+                  ) : (
+                    <div className="bg-white border border-gray-200 rounded-lg p-12 text-center">
+                      <Network className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                      <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                        Nenhuma interface de rede
+                      </h3>
+                      <p className="text-gray-500">
+                        Informações de rede não disponíveis para esta máquina.
+                      </p>
+                    </div>
+                  )}
+                </TabsContent>
+
+                <TabsContent value="processes" className="space-y-6">
+                  <Section title="Processos Ativos" description="Lista dos processos em execução no sistema">
+                    <div className="bg-white border border-gray-200 rounded-lg p-6">
+                      <ProcessesTable processes={selectedData.processes} />
+                    </div>
+                  </Section>
+                </TabsContent>
+              </Tabs>
+            </div>
+          ) : (
+            <div className="bg-white border border-gray-200 rounded-lg p-12 text-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto mb-4"></div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                Carregando dados...
+              </h3>
+              <p className="text-gray-500">
+                Aguarde enquanto buscamos as informações do sistema.
+              </p>
+            </div>
+          )}
         </div>
-      </SidebarInset>
-    </SidebarProvider>
+      </main>
+    </div>
   );
 }

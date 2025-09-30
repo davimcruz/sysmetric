@@ -24,15 +24,8 @@ export function NetworkInterfacesContent() {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-sm">Interfaces de Rede</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-3">
-          {interfaceCards}
-        </div>
-      </CardContent>
-    </Card>
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {interfaceCards}
+    </div>
   )
 }

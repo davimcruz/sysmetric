@@ -13,12 +13,8 @@ ENDPOINT = "http://localhost:3000/api/monitor"
 INTERVAL = 5
 TIMEOUT = 5
 
-def get_config_file():
-    hostname = platform.node()
-    return f"config_{hostname}.json"
-
 def load_config():
-    config_file = get_config_file()
+    config_file = "config.json"
     default_config = {
         "machine_id": str(uuid.uuid4()),
         "machine_name": platform.node(),
@@ -34,6 +30,12 @@ def load_config():
                 for key, value in default_config.items():
                     if key not in config:
                         config[key] = value
+                
+                current_hostname = platform.node()
+                if config.get("machine_name") != current_hostname:
+                    config["machine_name"] = current_hostname
+                    save_config(config)
+                
                 return config
         except:
             pass
@@ -42,7 +44,7 @@ def load_config():
     return default_config
 
 def save_config(config):
-    config_file = get_config_file()
+    config_file = "config.json"
     try:
         with open(config_file, 'w', encoding='utf-8') as f:
             json.dump(config, f, indent=2, ensure_ascii=False)
@@ -131,7 +133,7 @@ def collect_data():
         },
         "network": get_network_info(),
         "battery": get_battery_info(),
-        "processes": get_top_processes(),
+        "processes": get_all_processes(),
         "gpu": get_gpu_info(),
         "system_info": {
             "platform": platform.platform(),
@@ -143,7 +145,7 @@ def collect_data():
     
     return data
 
-def get_top_processes():
+def get_all_processes():
     processes = []
     for proc in psutil.process_iter(['pid', 'name', 'cpu_percent', 'memory_percent', 'status']):
         try:
@@ -156,7 +158,7 @@ def get_top_processes():
         except:
             continue
     
-    return sorted(processes, key=lambda p: p['cpu_percent'], reverse=True)[:10]
+    return sorted(processes, key=lambda p: p['cpu_percent'], reverse=True)
 
 def get_gpu_info():
     try:
@@ -230,7 +232,7 @@ def main():
         config["machine_name"] = args.name
     
     if args.config:
-        print(f"Configuração atual ({get_config_file()}):")
+        print(f"Configuração atual (config.json):")
         print(json.dumps(config, indent=2, ensure_ascii=False))
         return
     
@@ -238,7 +240,7 @@ def main():
         config["machine_name"] = args.set_name
         save_config(config)
         print(f"Nome da máquina definido como: {args.set_name}")
-        print(f"Arquivo de configuração: {get_config_file()}")
+        print(f"Arquivo de configuração: config.json")
         return
     
     save_config(config)
@@ -249,7 +251,7 @@ def main():
     
     print(f"Monitorando '{config['machine_name']}' (intervalo: {config['interval']}s) - Ctrl+C para parar")
     print(f"Endpoint: {config['endpoint']}")
-    print(f"Arquivo de configuração: {get_config_file()}")
+    print(f"Arquivo de configuração: config.json")
     
     try:
         while True:

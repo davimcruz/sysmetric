@@ -7,15 +7,26 @@ import {
 } from "./utils";
 import {
   getAllMonitors,
+  getAllMonitorsIncludingDisconnected,
   addOrUpdateMonitor,
   cleanupMonitors,
   getMonitorsCount,
+  getTotalMonitorsCount,
 } from "./store";
 
 export async function GET() {
   try {
-    const monitors = getAllMonitors();
-    return NextResponse.json(monitors, { status: 200 });
+    const connectedMonitors = getAllMonitors();
+    const allMonitors = getAllMonitorsIncludingDisconnected();
+    const connectedCount = getMonitorsCount();
+    const totalCount = getTotalMonitorsCount();
+    
+    return NextResponse.json({
+      monitors: connectedMonitors,
+      connectedCount,
+      totalCount,
+      disconnectedCount: totalCount - connectedCount
+    }, { status: 200 });
   } catch (error) {
     const errorMessage =
       error instanceof Error ? error.message : "Erro desconhecido";
