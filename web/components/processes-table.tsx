@@ -48,11 +48,6 @@ export function ProcessesTable({ processes }: ProcessesTableProps) {
     return 'text-orange-500'
   }
 
-  const getCpuBgColor = (percent: number) => {
-    if (percent < 10) return 'bg-emerald-50'
-    if (percent < 30) return 'bg-amber-50'
-    return 'bg-orange-50'
-  }
 
 
   const getProcessIcon = (name: string) => {

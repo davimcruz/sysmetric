@@ -16,13 +16,13 @@ type TrendsChartProps = {
   data: TrendData[]
 }
 
-const StatCard = memo(({ title, trend, trendText, currentValue, stats }: {
+const StatCard = memo(function StatCard({ title, trend, trendText, currentValue, stats }: {
   title: string
   trend: string
   trendText: string
   currentValue: number
   stats: { min: number; max: number; avg: number }
-}) => {
+}) {
   const getTrendIcon = useCallback((trend: string) => {
     switch (trend) {
       case 'up': return <TrendingUp className="h-4 w-4 text-red-500" />

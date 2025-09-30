@@ -1,4 +1,4 @@
-import { Clock, Calendar, Timer } from "lucide-react"
+import { Clock, Timer } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { formatUptime, formatBootTime } from '../utils'
 

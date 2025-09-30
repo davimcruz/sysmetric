@@ -20,7 +20,12 @@ export default function Page() {
   const [selectedMachine, setSelectedMachine] = useState<string>("");
   const [isLoading, setIsLoading] = useState(true);
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
-  const [trendsData, setTrendsData] = useState<any[]>([]);
+  const [trendsData, setTrendsData] = useState<{
+    timestamp: number;
+    cpu_percent: number;
+    memory_percent: number;
+    disk_percent: number;
+  }[]>([]);
   const monitorsRef = useRef<MonitorData[]>([]);
 
   const selectedData = useMemo(

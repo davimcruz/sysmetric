@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useMemo } from "react"
-import { Bell, AlertTriangle, CheckCircle, Info, Wifi, Cpu, HardDrive, MemoryStick, WifiOff, Server } from "lucide-react"
+import { Bell, CheckCircle, Cpu, HardDrive, MemoryStick, WifiOff, Server } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import {

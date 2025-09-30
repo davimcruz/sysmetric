@@ -17,7 +17,6 @@ import {
 export async function GET() {
   try {
     const connectedMonitors = getAllMonitors();
-    const allMonitors = getAllMonitorsIncludingDisconnected();
     const connectedCount = getMonitorsCount();
     const totalCount = getTotalMonitorsCount();
     

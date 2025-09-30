@@ -1,4 +1,4 @@
-import { Cpu, Zap, TrendingUp } from "lucide-react"
+import { Cpu, Zap } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { CpuFreqCardProps } from '../types'
 
