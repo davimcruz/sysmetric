@@ -1,0 +1,24 @@
+version: "3.8"
+
+services:
+  web:
+    build:
+      context: ./web
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+    restart: always
+
+  monitor:
+    build:
+      context: ./localMonitor
+      dockerfile: Dockerfile
+    depends_on:
+      - web
+    environment:
+      - PYTHONUNBUFFERED=1
+    # Override the endpoint to point to the web service within the docker network
+    command: python main.py --endpoint http://web:3000/api/monitor --interval 2
+    restart: always

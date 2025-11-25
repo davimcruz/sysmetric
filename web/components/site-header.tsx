@@ -40,12 +40,9 @@ export function SiteHeader({
     <header className="sticky top-0 z-50 w-full border-b border-gray-200 bg-white">
       <div className="max-w-7xl mx-auto flex h-16 items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="h-8 w-8 rounded-lg bg-green-600 flex items-center justify-center">
-            <span className="text-white font-bold text-sm">S</span>
-          </div>
           <div>
             <h1 className="text-lg font-semibold text-gray-900">Sysmetric</h1>
-            <p className="text-xs text-gray-500">Monitoramento de Sistemas</p>
+            <p className="text-xs text-gray-500">Monitoramento de Sistemas Operacionais</p>
           </div>
         </div>
         
