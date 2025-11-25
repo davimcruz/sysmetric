@@ -147,8 +147,8 @@ export default function Page() {
         selectedMachine={selectedMachine}
         onMachineChange={setSelectedMachine}
         machines={machines}
-        monitorsCount={monitors.length}
-        previousMonitorsCount={previousMonitors.length}
+        monitors={monitors}
+        previousMonitors={previousMonitors}
         systemData={systemData}
         previousSystemData={previousSystemData}
       />
