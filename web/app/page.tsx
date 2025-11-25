@@ -79,16 +79,27 @@ export default function Page() {
 
         if (Array.isArray(monitorsData) && monitorsData.length > 0) {
           setPreviousMonitors(monitorsRef.current);
-          setMonitors(monitorsData);
-          monitorsRef.current = monitorsData;
+
+          const mergedMonitorsMap = new Map(
+            monitorsRef.current.map((m) => [m.id, m])
+          );
+
+          monitorsData.forEach((newMonitor: MonitorData) => {
+            mergedMonitorsMap.set(newMonitor.id, newMonitor);
+          });
+
+          const mergedMonitors = Array.from(mergedMonitorsMap.values());
+
+          setMonitors(mergedMonitors);
+          monitorsRef.current = mergedMonitors;
           setLastUpdate(new Date());
           lastValidResponseRef.current = Date.now();
 
-          if (!selectedMachine) {
-            setSelectedMachine(monitorsData[0].id);
+          if (!selectedMachine && mergedMonitors.length > 0) {
+            setSelectedMachine(mergedMonitors[0].id);
           }
         } else {
-          if (Date.now() - lastValidResponseRef.current > 1200000) {
+          if (Date.now() - lastValidResponseRef.current > 30000) {
             setMonitors([]);
             monitorsRef.current = [];
           }
@@ -97,7 +108,7 @@ export default function Page() {
       setIsLoading(false);
     } catch (error) {
       console.error("Erro ao buscar dados de monitoramento:", error);
-      if (Date.now() - lastValidResponseRef.current > 1200000) {
+      if (Date.now() - lastValidResponseRef.current > 30000) {
         setMonitors([]);
         monitorsRef.current = [];
       }

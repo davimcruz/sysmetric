@@ -1,7 +1,7 @@
 {
   "machine_id": "a44aeeb3-722a-4cc2-b727-de8de6cea489",
   "machine_name": "MacBook-Air-de-Davi.local",
-  "endpoint": "http://localhost:3001/api/monitor",
+  "endpoint": "https://sysmetric.vercel.app/api/monitor",
   "interval": 5,
   "timeout": 5
 }
