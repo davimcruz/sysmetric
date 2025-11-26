@@ -133,7 +133,7 @@ export default function Page() {
   useEffect(() => {
     fetchData();
     fetchTrendsData();
-    const interval = setInterval(fetchData, 2000); // Reduced interval for better responsiveness
+    const interval = setInterval(fetchData, 2000);
     const trendsInterval = setInterval(fetchTrendsData, 2000);
     return () => {
       clearInterval(interval);
